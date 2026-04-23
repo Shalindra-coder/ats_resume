@@ -1,0 +1,23 @@
+Extract applicant information from the resume text. Return ONLY valid JSON.
+
+Job Title: {{JOB_TITLE}}
+
+Resume Text:
+----------------------
+{{RESUME_TEXT}}
+----------------------
+
+Output ONLY valid JSON in this format (no scoring, no fit assessment):
+
+{
+  "applicant_name": "",
+  "email_id": "",
+  "phone_number": "",
+  "custom_phone_number_2": ""
+}
+
+Rules:
+1. Correct OCR errors.
+2. Normalize phone numbers.
+3. Infer missing fields when possible.
+4. Return ONLY JSON, nothing else.

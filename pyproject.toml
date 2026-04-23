@@ -1,0 +1,27 @@
+[project]
+name = "resume"
+authors = [
+    { name = "Pratul", email = "ptpratul2@gmail.com" }
+]
+description = "For automating Job Applicant Creation"
+requires-python = ">=3.10"
+readme = "README.md"
+dynamic = ["version"]
+dependencies = [
+    "frappe",
+    "hrms",
+    "pdfminer.six",
+    "pytesseract",
+    "Pillow",
+    "pdf2image",
+    "google-generativeai"
+]
+
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.bench.dev-dependencies]
+# Example if you need dev dependencies
+# package_name = "~=1.1.0"
+
