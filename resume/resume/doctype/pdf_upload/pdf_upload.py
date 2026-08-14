@@ -307,26 +307,102 @@ def _extract_text(file_path, ext):
             return f.read()
     return None
 
+# def _extract_and_parse_file(args):
+#     """Runs in thread. Uses pre-loaded api_key + prompt_template. No frappe calls."""
+#     file_path, file_url, job_title, job_desc, ext, api_key, prompt_template = args
+#     try:
+#         if ext == ".pdf":
+#             text = _extract_text(file_path, ext)
+#             if text:
+#                 applicant_data = _parse_text_threadsafe(api_key, prompt_template, text, job_title, job_desc)
+#             else:
+#                 applicant_data = _parse_pdf_threadsafe(api_key, prompt_template, file_path, job_title, job_desc)
+#         else:
+#             text = _extract_text(file_path, ext)
+#             if not text:
+#                 return (file_url, None, f"Could not extract text from {file_url}")
+#             applicant_data = _parse_text_threadsafe(api_key, prompt_template, text, job_title, job_desc)
+#         return (file_url, applicant_data, None)
+#     except Exception as e:
+#         return (file_url, None, str(e))
+
 def _extract_and_parse_file(args):
-    """Runs in thread. Uses pre-loaded api_key + prompt_template. No frappe calls."""
+    """Extract and parse CV safely with fallback for all supported file types."""
+
     file_path, file_url, job_title, job_desc, ext, api_key, prompt_template = args
+
     try:
-        if ext == ".pdf":
-            text = _extract_text(file_path, ext)
-            if text:
-                applicant_data = _parse_text_threadsafe(api_key, prompt_template, text, job_title, job_desc)
-            else:
-                applicant_data = _parse_pdf_threadsafe(api_key, prompt_template, file_path, job_title, job_desc)
-        else:
-            text = _extract_text(file_path, ext)
-            if not text:
-                return (file_url, None, f"Could not extract text from {file_url}")
-            applicant_data = _parse_text_threadsafe(api_key, prompt_template, text, job_title, job_desc)
-        return (file_url, applicant_data, None)
+
+        text = _extract_text(file_path, ext)
+
+        applicant_data = {}
+
+        if text:
+
+            applicant_data = _parse_text_threadsafe(
+                api_key,
+                prompt_template,
+                text,
+                job_title,
+                job_desc
+            )
+
+            # Ensure dictionary
+            if not isinstance(applicant_data, dict):
+                applicant_data = {}
+
+
+        email = applicant_data.get("email_id")
+
+        if email is not None:
+            email = str(email).strip()
+
+
+        if not email:
+
+            fallback_data = _parse_pdf_threadsafe(
+                api_key,
+                prompt_template,
+                file_path,
+                job_title,
+                job_desc
+            )
+
+
+            if isinstance(fallback_data, dict):
+
+                for key, value in fallback_data.items():
+
+                    # Keep existing value
+                    # Only fill missing values
+                    if (
+                        not applicant_data.get(key)
+                        and value
+                    ):
+                        applicant_data[key] = value
+
+
+        if not applicant_data:
+
+            return (
+                file_url,
+                None,
+                f"Could not parse file: {file_url}"
+            )
+
+        return (
+            file_url,
+            applicant_data,
+            None
+        )
+
     except Exception as e:
-        return (file_url, None, str(e))
 
-
+        return (
+            file_url,
+            None,
+            str(e)
+        )
 
 def process_files_background(docname):
     """Processes uploaded files in parallel - multiple resumes parsed concurrently for speed."""
